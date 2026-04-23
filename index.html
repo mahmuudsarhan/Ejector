@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="description" content="Ejector" />
+	<title>Ejector</title>
+	<style>
+		:root {
+			--bg: #120706;
+			--bg-deep: #080203;
+			--panel: #241311;
+			--panel-2: #2e1a16;
+			--text: #f3e9df;
+			--muted: #d4b9a7;
+			--border: rgba(83, 47, 37, 0.85);
+			--accent: #ffcf00;
+			--accent-soft: #f8b7c2;
+			--focus: #f0c7a2;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		html,
+		body {
+			min-height: 100%;
+			height: auto;
+		}
+
+		body {
+			margin: 0;
+			background:
+				radial-gradient(1100px 520px at 50% -10%, #2b150f 0%, transparent 65%),
+				linear-gradient(180deg, var(--bg), var(--bg-deep));
+			color: var(--text);
+			font-family: "Segoe Print", "Comic Sans MS", "Trebuchet MS", sans-serif;
+			display: block;
+			padding:
+				max(12px, env(safe-area-inset-top))
+				max(12px, env(safe-area-inset-right))
+				max(14px, env(safe-area-inset-bottom))
+				max(12px, env(safe-area-inset-left));
+			line-height: 1.45;
+			position: relative;
+			overflow-x: hidden;
+			overflow-y: auto;
+			min-height: 100dvh;
+		}
+
+		body::before,
+		body::after {
+			content: "";
+			position: fixed;
+			width: 70px;
+			height: 70px;
+			border: 4px solid #2f2b2a;
+			box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+			z-index: 0;
+		}
+
+		body::before {
+			top: 19%;
+			left: 10%;
+			background: #46b5b2;
+			transform: rotate(8deg);
+		}
+
+		body::after {
+			top: 38%;
+			right: 11%;
+			background: #d45c61;
+			transform: rotate(7deg);
+		}
+
+		.shell {
+			width: min(960px, 100%);
+			max-width: 100%;
+			margin: 0 auto;
+			border: 1px solid rgba(53, 27, 22, 0.9);
+			border-radius: 22px;
+			background: linear-gradient(180deg, var(--panel-2), var(--panel));
+			box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+			overflow: hidden;
+			position: relative;
+			z-index: 1;
+		}
+
+		main.shell {
+			display: block;
+		}
+
+		.header {
+			border-bottom: 1px solid rgba(95, 54, 44, 0.55);
+			padding: clamp(14px, 2vw, 22px);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			flex-wrap: wrap;
+			background: rgba(20, 10, 8, 0.38);
+		}
+
+		.title {
+			margin: 0;
+			font-size: clamp(1.08rem, 2.8vw, 1.35rem);
+			letter-spacing: 0.02em;
+			text-transform: none;
+			color: #f7ede5;
+		}
+
+		.status {
+			font-size: 0.82rem;
+			color: #f7e0cf;
+			border: 1px solid rgba(116, 65, 52, 0.8);
+			padding: 4px 10px;
+			white-space: normal;
+			text-transform: none;
+			letter-spacing: 0.01em;
+			text-shadow: none;
+			background: rgba(44, 22, 17, 0.6);
+			border-radius: 10px;
+			max-width: 100%;
+		}
+
+		.content {
+			padding: clamp(14px, 2.8vw, 28px);
+			display: grid;
+			gap: clamp(12px, 2.4vw, 18px);
+			text-align: center;
+		}
+
+		.controls {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+			gap: 12px;
+		}
+
+		.field {
+			display: grid;
+			gap: 8px;
+		}
+
+		label {
+			font-size: 0.95rem;
+			color: var(--muted);
+			text-transform: none;
+			letter-spacing: 0.01em;
+		}
+
+		select,
+		button {
+			width: 100%;
+			border-radius: 10px;
+			border: 1px solid var(--border);
+			background: #2a1713;
+			color: var(--text);
+			font-family: inherit;
+			font-size: clamp(0.96rem, 1.3vw, 1rem);
+			padding: 12px 12px;
+			min-height: 44px;
+			outline: none;
+			transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, transform 0.08s ease;
+		}
+
+		select:focus-visible,
+		button:focus-visible {
+			border-color: var(--focus);
+			box-shadow: 0 0 0 3px rgba(240, 199, 162, 0.2);
+		}
+
+		.eject {
+			margin-top: 2px;
+			font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+			letter-spacing: 0.02em;
+			text-transform: none;
+			font-weight: 700;
+			background: linear-gradient(180deg, #f7cb6d, #f6a928 62%, #e59011);
+			color: #2d170e;
+			border: 1px solid #dd911e;
+			min-height: clamp(52px, 8vw, 72px);
+			box-shadow: 0 8px 18px rgba(185, 109, 19, 0.35), inset 0 1px 0 rgba(255, 243, 209, 0.6);
+			cursor: pointer;
+		}
+
+		.eject:hover {
+			box-shadow: 0 10px 22px rgba(185, 109, 19, 0.42), inset 0 1px 0 rgba(255, 243, 209, 0.7);
+			transform: translateY(-1px);
+		}
+
+		.eject:active {
+			transform: translateY(0);
+		}
+
+		.output-panel {
+			border: 1px solid var(--border);
+			background: linear-gradient(180deg, #2b1713, #25130f);
+			padding: 12px;
+			display: grid;
+			gap: 10px;
+			min-height: 170px;
+			border-radius: 16px;
+		}
+
+		.output-label {
+			font-size: 1rem;
+			text-transform: none;
+			color: var(--muted);
+			letter-spacing: 0.01em;
+			font-weight: 600;
+		}
+
+		.output {
+			position: relative;
+			margin: 0;
+			min-height: 80px;
+			font-size: clamp(1rem, 2vw, 1.2rem);
+			color: #f5e7dd;
+			white-space: pre-wrap;
+			word-wrap: break-word;
+			overflow: hidden;
+			overflow-wrap: anywhere;
+		}
+
+		.output.typing::after {
+			content: "|";
+			margin-left: 2px;
+			color: var(--accent);
+			animation: blink 0.8s steps(1, end) infinite;
+		}
+
+		.actions {
+			display: flex;
+			justify-content: center;
+		}
+
+		.copy-btn {
+			width: auto;
+			min-width: 160px;
+			padding-inline: 14px;
+			cursor: pointer;
+			text-transform: none;
+			letter-spacing: 0.01em;
+			color: #f6e8da;
+			border-color: #704635;
+			background: #321d18;
+		}
+
+		.copy-btn:hover {
+			border-color: #8f5c46;
+			background: #3f241d;
+		}
+
+		.copy-btn.copied {
+			border-color: rgba(252, 197, 63, 0.85);
+			color: #2b160d;
+			background: linear-gradient(180deg, #ffd869, #ffc72e);
+			box-shadow: 0 0 0 1px rgba(248, 193, 66, 0.45), 0 0 12px rgba(248, 193, 66, 0.25);
+		}
+
+		.active-state {
+			display: flex;
+			justify-content: center;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.chip {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 6px 10px;
+			border-radius: 999px;
+			border: 1px solid #704635;
+			background: #301b16;
+			font-size: 0.86rem;
+			color: #eecdb9;
+		}
+
+		.quick-actions {
+			display: flex;
+			justify-content: center;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.ghost-btn {
+			width: auto;
+			min-width: 140px;
+			padding-inline: 16px;
+			background: #301b16;
+			border-color: #7e503e;
+			color: #f3ddcc;
+		}
+
+		.ghost-btn:hover {
+			background: #3c221b;
+			border-color: #9c634d;
+		}
+
+		.surprise-btn {
+			background: linear-gradient(180deg, #ffda87, #ffc548);
+			border-color: #c88216;
+			color: #2f180e;
+			font-weight: 700;
+		}
+
+		.surprise-btn:hover {
+			background: linear-gradient(180deg, #ffe29a, #ffc95a);
+			border-color: #db9223;
+		}
+
+		.history-panel {
+			border: 1px solid var(--border);
+			background: linear-gradient(180deg, #2a1612, #23120f);
+			padding: 12px;
+			border-radius: 16px;
+			display: grid;
+			gap: 10px;
+			text-align: left;
+			max-height: min(42vh, 360px);
+			overflow: auto;
+		}
+
+		.history-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+		}
+
+		.history-title {
+			font-size: 0.95rem;
+			color: #e8c6b1;
+			font-weight: 600;
+		}
+
+		.small-btn {
+			width: auto;
+			min-width: 90px;
+			padding: 8px 10px;
+			font-size: 0.85rem;
+			background: #331e18;
+			border-color: #76503f;
+		}
+
+		.history-list {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			display: grid;
+			gap: 8px;
+		}
+
+		.history-item-btn {
+			width: 100%;
+			text-align: left;
+			padding: 10px 12px;
+			font-size: 0.9rem;
+			background: #301b16;
+			border: 1px solid #654334;
+			border-radius: 8px;
+			color: #f0d9ca;
+			cursor: pointer;
+		}
+
+		.history-item-btn:hover {
+			background: #3a211a;
+			border-color: #89604d;
+		}
+
+		.history-empty {
+			margin: 0;
+			color: #c49f88;
+			font-size: 0.88rem;
+		}
+
+		.hint {
+			margin: 0;
+			color: #c9a993;
+			font-size: 0.92rem;
+			letter-spacing: 0.01em;
+		}
+
+		@keyframes blink {
+			0%,
+			45% {
+				opacity: 1;
+			}
+			50%,
+			100% {
+				opacity: 0;
+			}
+		}
+
+		@keyframes shellPulse {
+			0% { box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+			50% { box-shadow: 0 0 0 2px rgba(255, 208, 97, 0.32), 0 28px 68px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07); }
+			100% { box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+		}
+
+		.shell.flash {
+			animation: shellPulse 0.45s ease;
+		}
+
+		@media (max-width: 700px) {
+			body::before,
+			body::after {
+				width: 52px;
+				height: 52px;
+				border-width: 3px;
+				opacity: 0.72;
+			}
+
+			.shell {
+				border-radius: 16px;
+				margin-top: 2px;
+			}
+
+			.controls {
+				grid-template-columns: 1fr;
+			}
+
+			.status {
+				font-size: 0.78rem;
+				padding: 6px 10px;
+				width: 100%;
+			}
+
+			.actions {
+				justify-content: stretch;
+			}
+
+			.copy-btn {
+				width: 100%;
+			}
+
+			.ghost-btn,
+			.small-btn {
+				width: 100%;
+			}
+
+			.quick-actions {
+				align-items: stretch;
+			}
+
+			.history-header {
+				flex-direction: column;
+				align-items: stretch;
+			}
+
+			.history-panel {
+				max-height: none;
+			}
+		}
+
+		@media (max-width: 420px) {
+			body {
+				padding:
+					max(10px, env(safe-area-inset-top))
+					max(10px, env(safe-area-inset-right))
+					max(12px, env(safe-area-inset-bottom))
+					max(10px, env(safe-area-inset-left));
+			}
+
+			.header,
+			.content {
+				padding-left: 10px;
+				padding-right: 10px;
+			}
+
+			.title {
+				font-size: 1.05rem;
+			}
+
+			.eject {
+				font-size: 1rem;
+				min-height: 50px;
+			}
+
+			.output {
+				font-size: 0.98rem;
+			}
+		}
+
+		@media (pointer: coarse) {
+			select,
+			button,
+			.history-item-btn {
+				min-height: 46px;
+			}
+		}
+
+		@media (min-width: 1100px) {
+			.shell {
+				width: min(1020px, calc(100% - 24px));
+			}
+
+			.content {
+				gap: 20px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<main class="shell" aria-label="Ejector interface">
+		<header class="header">
+			<h1 class="title">Ejector</h1>
+			<span class="status">Your excuse is here, introvert!</span>
+		</header>
+
+		<section class="content">
+			<div class="controls" aria-label="Generator settings">
+				<div class="field">
+					<label for="contextSelect">Context</label>
+					<select id="contextSelect" aria-label="Choose context">
+						<option value="Professional">Professional</option>
+						<option value="Social">Social</option>
+						<option value="Family">Family</option>
+					</select>
+				</div>
+
+				<div class="field">
+					<label for="toneSelect">Intensity</label>
+					<select id="toneSelect" aria-label="Choose intensity or mode">
+						<optgroup label="Intensity">
+							<option value="intensity:Casual" selected>Casual</option>
+							<option value="intensity:Urgent">Urgent</option>
+							<option value="intensity:Chaotic">Chaotic</option>
+						</optgroup>
+						<optgroup label="Mode">
+							<option value="mode:Standard">Standard</option>
+							<option value="mode:Convincing">Convincing</option>
+							<option value="mode:Diplomatic">Diplomatic</option>
+							<option value="mode:Funny">Funny</option>
+						</optgroup>
+					</select>
+				</div>
+			</div>
+
+			<button id="ejectBtn" class="eject" type="button">INITIATE EJECT</button>
+
+			<div class="active-state" aria-live="polite">
+				<span class="chip">Intensity: <strong id="activeIntensity">Casual</strong></span>
+				<span class="chip">Mode: <strong id="activeMode">Standard</strong></span>
+			</div>
+
+			<div class="quick-actions">
+				<button id="regenBtn" class="ghost-btn" type="button">Generate Another</button>
+				<button id="surpriseBtn" class="ghost-btn surprise-btn" type="button">Surprise Me</button>
+			</div>
+
+			<article class="output-panel" aria-live="polite" aria-atomic="true">
+				<div class="output-label">Generated Excuse</div>
+				<p id="outputText" class="output">Awaiting extraction parameters...</p>
+				<div class="actions">
+					<button id="copyBtn" class="copy-btn" type="button">Copy to Clipboard</button>
+				</div>
+			</article>
+
+			<section class="history-panel" aria-label="Recent excuses">
+				<div class="history-header">
+					<div class="history-title">Recent Excuses</div>
+					<button id="clearHistoryBtn" class="small-btn" type="button">Clear</button>
+				</div>
+				<ul id="historyList" class="history-list"></ul>
+				<p id="historyEmpty" class="history-empty">No recent excuses yet.</p>
+			</section>
+
+			<p class="hint">Tip: Choose the best style from the intensity menu for better results.</p>
+		</section>
+	</main>
+
+	<script>
+		(function () {
+			const generationProfiles = {
+				Standard: {
+					opener: {
+						Casual: [
+							"Quick note",
+							"Just a heads-up",
+							"I need to step away briefly",
+							"Small interruption on my side"
+						],
+						Urgent: [
+							"I need to step out for a moment",
+							"I just got an urgent ping",
+							"I need to handle something right away",
+							"I have to drop for a priority issue"
+						],
+						Chaotic: [
+							"Everything just escalated quickly",
+							"I got hit with a sudden emergency",
+							"This turned into a bigger issue than expected",
+							"I need to step out immediately"
+						]
+					},
+					bridge: [
+						"because",
+						"since",
+						"as"
+					],
+					context: {
+						Professional: {
+							subject: ["a client request", "my system access", "an internal workflow", "a pending approval", "a deliverable check"],
+							problem: ["needs immediate attention", "just changed", "requires confirmation", "is now time-sensitive", "is waiting on me"],
+							action: ["resolve it quickly", "jump on a short call", "send the needed details", "handle it now", "close the loop before returning"]
+						},
+						Social: {
+							subject: ["my ride", "a reservation", "a delivery", "a personal call", "my access at home"],
+							problem: ["just shifted", "is expiring soon", "needs immediate response", "moved earlier", "is time-locked"],
+							action: ["sort it quickly", "lock it in now", "step out and handle it", "fix it and rejoin", "take care of it before it expires"]
+						},
+						Family: {
+							subject: ["something at home", "a family errand", "a house issue", "a pickup plan", "a relative's schedule"],
+							problem: ["needs me now", "can't be delayed", "just changed unexpectedly", "requires immediate help", "is getting urgent"],
+							action: ["go handle it", "step in right now", "sort it out quickly", "stabilize things", "deal with it and come back"]
+						}
+					},
+					intensity: {
+						Casual: {
+							timing: ["for a minute", "for a short moment", "briefly", "for a quick check"],
+							promise: ["I'll be back shortly.", "I'll follow up in a bit.", "I'll message once it's sorted.", "I'll rejoin right after."]
+						},
+						Urgent: {
+							timing: ["right now", "within a few minutes", "before the deadline", "immediately"],
+							promise: ["I'll update you as soon as it's handled.", "I'll reconnect once this is under control.", "I'll be back with an update shortly.", "I'll follow up right away after this."]
+						},
+						Chaotic: {
+							timing: ["before this gets worse", "while this is manageable", "before the window closes", "before it snowballs"],
+							promise: ["I'll report back when things settle.", "I'll update once I can.", "I'll reconnect when this is stable.", "I'll be back with a clear update soon."]
+						}
+					}
+				},
+				Convincing: {
+					opener: {
+						Casual: [
+							"Hey, quick heads-up",
+							"I hate to do this",
+							"Sorry to cut this short",
+							"Small hiccup on my side"
+						],
+						Urgent: [
+							"I need to step away right now",
+							"I just got a time-sensitive message",
+							"I have to handle something immediately",
+							"I need to jump out for an urgent issue"
+						],
+						Chaotic: [
+							"I know this sounds wild, but",
+							"Everything just escalated at once",
+							"This turned into an all-hands situation for me",
+							"I’ve got a genuine emergency on my end"
+						]
+					},
+					bridge: [
+						"because",
+						"since",
+						"as",
+						"with"
+					],
+					context: {
+						Professional: {
+							subject: ["a client thread", "a production workflow", "my access session", "a deliverable handoff", "an internal escalation"],
+							problem: ["just got blocked", "needs immediate clarification", "requires me to verify details live", "is waiting on my approval", "has been flagged as priority"],
+							action: ["jump into a quick triage call", "resolve it before it impacts others", "send the missing details immediately", "sort it out with the on-call team", "handle it and then return with an update"]
+						},
+						Social: {
+							subject: ["my ride home", "a booking", "a delivery window", "a personal call", "my building access"],
+							problem: ["shifted unexpectedly", "is about to expire", "moved to an earlier slot", "needs confirmation now", "is suddenly time-locked"],
+							action: ["step out and sort it quickly", "handle it before I lose the slot", "take a quick call and settle it", "fix it now and rejoin shortly", "wrap it up fast and come back"]
+						},
+						Family: {
+							subject: ["something at home", "a family logistics issue", "a relative’s appointment", "a house situation", "a pickup plan"],
+							problem: ["needs me in real time", "can’t wait until later", "just changed unexpectedly", "requires immediate backup", "is becoming urgent"],
+							action: ["go handle it now", "step in and stabilize things", "take care of it before it gets worse", "sort it out quickly", "jump in and then report back"]
+						}
+					},
+					intensity: {
+						Casual: {
+							timing: ["for a few minutes", "for a quick moment", "for a short detour", "for a brief check"],
+							promise: ["I’ll be right back.", "I’ll message once it’s done.", "I’ll circle back shortly.", "I’ll follow up in a bit."]
+						},
+						Urgent: {
+							timing: ["right now", "within the next few minutes", "before this deadline hits", "immediately"],
+							promise: ["I’ll send an update as soon as it’s handled.", "I’ll reconnect the moment this is under control.", "I’ll follow up right after.", "I’ll be back as soon as this is contained."]
+						},
+						Chaotic: {
+							timing: ["before this snowballs", "while this is still recoverable", "before the window closes", "before it turns into a mess"],
+							promise: ["I’ll report back once the dust settles.", "I’ll update you as soon as I can breathe again.", "I’ll reconnect once this is stable.", "I’ll come back with a clear update when this lands."]
+						}
+					}
+				},
+				Diplomatic: {
+					opener: {
+						Casual: [
+							"Apologies for the interruption",
+							"A quick update from my side",
+							"I need to briefly excuse myself",
+							"Thank you for your patience"
+						],
+						Urgent: [
+							"I need to step away for an urgent matter",
+							"I’ve received a time-sensitive request",
+							"I must briefly address a priority issue",
+							"I need to pause and handle something pressing"
+						],
+						Chaotic: [
+							"I need to excuse myself due to an unexpected escalation",
+							"An unplanned situation requires my immediate attention",
+							"A critical issue has surfaced on my end",
+							"I need to step away to manage an urgent complication"
+						]
+					},
+					bridge: [
+						"as",
+						"since",
+						"given that"
+					],
+					context: {
+						Professional: {
+							subject: ["a client dependency", "an internal approval", "a production check", "a compliance item", "a stakeholder request"],
+							problem: ["requires immediate clarification", "has become time-critical", "is currently blocked", "needs direct confirmation", "requires rapid follow-through"],
+							action: ["address it directly", "coordinate a quick resolution", "confirm the required details", "close the issue promptly", "resolve it before returning"]
+						},
+						Social: {
+							subject: ["a personal commitment", "my transport timing", "a reservation", "an important call", "a delivery window"],
+							problem: ["has changed unexpectedly", "is now time-bound", "requires immediate confirmation", "is approaching cutoff", "needs urgent attention"],
+							action: ["step away briefly and resolve it", "secure it before it lapses", "handle the call promptly", "address it now and return", "close it out quickly"]
+						},
+						Family: {
+							subject: ["a family matter", "a household issue", "an appointment handoff", "a time-sensitive errand", "home logistics"],
+							problem: ["needs my immediate support", "cannot be postponed", "requires prompt coordination", "has become urgent", "needs direct attention"],
+							action: ["handle it immediately", "step in and coordinate", "resolve it as quickly as possible", "provide support now", "stabilize it before I return"]
+						}
+					},
+					intensity: {
+						Casual: {
+							timing: ["for a short while", "for a brief moment", "for a quick check", "for a few minutes"],
+							promise: ["I appreciate it, and I’ll be back shortly.", "Thank you—I’ll follow up right after.", "I’ll return with an update in a few minutes.", "I’ll rejoin as soon as this is resolved."]
+						},
+						Urgent: {
+							timing: ["immediately", "within the next few minutes", "before the deadline", "right away"],
+							promise: ["I’ll share a clear update once handled.", "I’ll reconnect as soon as this is under control.", "I’ll report back immediately after resolving it.", "I’ll return the moment this is addressed."]
+						},
+						Chaotic: {
+							timing: ["before this escalates further", "while this remains manageable", "before the window closes", "before impact widens"],
+							promise: ["I’ll follow up once the situation stabilizes.", "I’ll provide a full update as soon as possible.", "I’ll reconnect once this is contained.", "I’ll report back the moment this is resolved."]
+						}
+					}
+				},
+				Funny: {
+					opener: {
+						Casual: [
+							"Plot twist",
+							"Minor comedy emergency",
+							"My day just pulled a cartoon move",
+							"Unexpected side quest unlocked"
+						],
+						Urgent: [
+							"Red alert, but make it silly",
+							"I need to vanish for a very weird reason",
+							"This is urgent and mildly ridiculous",
+							"Emergency update from the chaos department"
+						],
+						Chaotic: [
+							"Absolute clown-level escalation",
+							"This is one banana peel away from disaster",
+							"The universe chose slapstick today",
+							"Reality just went full sitcom"
+						]
+					},
+					context: {
+						Professional: {
+							subject: ["my laptop", "the shared doc", "our deployment", "the team channel", "my calendar"],
+							problem: ["started arguing with me", "has entered dramatic mode", "picked the worst possible timing", "is doing interpretive dance", "is refusing to cooperate"],
+							action: ["wrestle it back into reality", "perform emergency tech diplomacy", "put out tiny digital fires", "restore order before anyone notices", "fix the nonsense quickly"]
+						},
+						Social: {
+							subject: ["my ride", "my phone battery", "a delivery", "my keys", "my evening plan"],
+							problem: ["chose chaos", "went off-script", "is in full rebellion", "has become a puzzle", "is collapsing in real time"],
+							action: ["run a dramatic rescue mission", "save this from becoming a story my friends mock forever", "do a speedrun fix", "patch the situation before it memes itself", "deal with it at top speed"]
+						},
+						Family: {
+							subject: ["my house", "family group chat", "the evening schedule", "our pet", "a home errand"],
+							problem: ["has entered boss-fight mode", "just detonated the routine", "went unexpectedly feral", "is sprinting toward chaos", "needs an adult immediately"],
+							action: ["heroically intervene", "do emergency damage control", "stabilize the circus", "handle it before act two", "jump in and save the timeline"]
+						}
+					},
+					intensity: {
+						Casual: {
+							timing: ["for a hot minute", "for one tiny side quest", "for a quick reality check", "for a short chaos break"],
+							promise: ["I’ll return with fewer plot twists.", "Back soon, hopefully with dignity.", "I’ll rejoin once the comedy episode ends.", "I’ll be back before the soundtrack swells."]
+						},
+						Urgent: {
+							timing: ["right this second", "before this becomes folklore", "within the next few minutes", "immediately"],
+							promise: ["I’ll report back from the other side.", "I’ll return when the chaos meter drops below red.", "I’ll reappear as soon as the panic confetti settles.", "I’ll be back with an unnecessarily dramatic update."]
+						},
+						Chaotic: {
+							timing: ["before reality fully uninstalls", "while this is still legally manageable", "before act three starts", "before this reaches cinematic levels"],
+							promise: ["If I survive, I’ll send a sequel.", "I’ll reconnect when the universe stops freelancing.", "I’ll be back once this episode gets renewed for calm.", "I’ll return with a full blooper reel."]
+						}
+					}
+				}
+			};
+
+			const contextSelect = document.getElementById("contextSelect");
+			const toneSelect = document.getElementById("toneSelect");
+			const shell = document.querySelector(".shell");
+			const ejectBtn = document.getElementById("ejectBtn");
+			const regenBtn = document.getElementById("regenBtn");
+			const surpriseBtn = document.getElementById("surpriseBtn");
+			const outputText = document.getElementById("outputText");
+			const copyBtn = document.getElementById("copyBtn");
+			const activeIntensity = document.getElementById("activeIntensity");
+			const activeMode = document.getElementById("activeMode");
+			const historyList = document.getElementById("historyList");
+			const historyEmpty = document.getElementById("historyEmpty");
+			const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+
+			let typeTimer = null;
+			let copiedTimer = null;
+			let lastGenerated = "";
+			let currentIntensity = "Casual";
+			let currentMode = "Standard";
+			const recentExcuses = [];
+			const MAX_HISTORY = 7;
+
+			function updateActiveState() {
+				activeIntensity.textContent = currentIntensity;
+				activeMode.textContent = currentMode;
+			}
+
+			function renderHistory() {
+				historyList.textContent = "";
+
+				if (!recentExcuses.length) {
+					historyEmpty.style.display = "block";
+					return;
+				}
+
+				historyEmpty.style.display = "none";
+				recentExcuses.forEach(function (entry) {
+					const item = document.createElement("li");
+					const btn = document.createElement("button");
+					btn.type = "button";
+					btn.className = "history-item-btn";
+					btn.textContent = `${entry.meta} — ${entry.text}`;
+					btn.addEventListener("click", function () {
+						resetCopyState();
+						typewriter(entry.text, 12);
+					});
+					item.appendChild(btn);
+					historyList.appendChild(item);
+				});
+			}
+
+			function pushHistory(text) {
+				const meta = `${contextSelect.value} / ${currentIntensity} / ${currentMode}`;
+				if (recentExcuses[0] && recentExcuses[0].text === text) {
+					return;
+				}
+				recentExcuses.unshift({ text: text, meta: meta });
+				if (recentExcuses.length > MAX_HISTORY) {
+					recentExcuses.length = MAX_HISTORY;
+				}
+				renderHistory();
+			}
+
+			toneSelect.addEventListener("change", function () {
+				const parts = toneSelect.value.split(":");
+				const type = parts[0];
+				const value = parts[1];
+
+				if (type === "intensity") {
+					currentIntensity = value;
+				} else if (type === "mode") {
+					currentMode = value;
+				}
+
+				updateActiveState();
+			});
+
+			function pick(list) {
+				return list[Math.floor(Math.random() * list.length)];
+			}
+
+			function generateExcuse(context, intensity, mode) {
+				const profile = generationProfiles[mode] || generationProfiles.Standard;
+				const c = profile.context[context];
+				const i = profile.intensity[intensity];
+				const opener = pick(profile.opener[intensity]);
+				const bridge = pick(profile.bridge || ["because"]);
+
+				const line = [
+					`${opener},`,
+					`${bridge} ${pick(c.subject)} ${pick(c.problem)},`,
+					`I need to ${pick(c.action)} ${pick(i.timing)}.`,
+					pick(i.promise)
+				].join(" ");
+
+				return line.replace(/\s+/g, " ").trim();
+			}
+
+			function pickExcuse(context, intensity, mode) {
+				const profile = generationProfiles[mode] || generationProfiles.Standard;
+				if (!profile.context[context] || !profile.intensity[intensity]) {
+					return "No extraction script found for this configuration.";
+				}
+
+				let result = generateExcuse(context, intensity, mode);
+				let safety = 0;
+				while (result === lastGenerated && safety < 4) {
+					result = generateExcuse(context, intensity, mode);
+					safety += 1;
+				}
+				lastGenerated = result;
+				return result;
+			}
+
+			function typewriter(text, speed) {
+				if (typeTimer) {
+					clearInterval(typeTimer);
+					typeTimer = null;
+				}
+
+				outputText.textContent = "";
+				outputText.classList.add("typing");
+
+				let i = 0;
+				typeTimer = setInterval(function () {
+					i += 1;
+					outputText.textContent = text.slice(0, i);
+					if (i >= text.length) {
+						clearInterval(typeTimer);
+						typeTimer = null;
+						outputText.classList.remove("typing");
+					}
+				}, speed);
+			}
+
+			function resetCopyState() {
+				if (copiedTimer) {
+					clearTimeout(copiedTimer);
+					copiedTimer = null;
+				}
+				copyBtn.classList.remove("copied");
+				copyBtn.textContent = "Copy to Clipboard";
+			}
+
+			function generateNow() {
+				const context = contextSelect.value;
+				const excuse = pickExcuse(context, currentIntensity, currentMode);
+				resetCopyState();
+				typewriter(excuse, 18);
+				pushHistory(excuse);
+			}
+
+			function pulseShell() {
+				shell.classList.remove("flash");
+				void shell.offsetWidth;
+				shell.classList.add("flash");
+			}
+
+			ejectBtn.addEventListener("click", function () {
+				generateNow();
+			});
+
+			regenBtn.addEventListener("click", function () {
+				generateNow();
+			});
+
+			surpriseBtn.addEventListener("click", function () {
+				const contexts = ["Professional", "Social", "Family"];
+				const intensities = ["Casual", "Urgent", "Chaotic"];
+				const modes = ["Standard", "Convincing", "Diplomatic", "Funny"];
+
+				contextSelect.value = pick(contexts);
+				currentIntensity = pick(intensities);
+				currentMode = pick(modes);
+				toneSelect.value = `mode:${currentMode}`;
+				updateActiveState();
+				pulseShell();
+				generateNow();
+			});
+
+			clearHistoryBtn.addEventListener("click", function () {
+				recentExcuses.length = 0;
+				renderHistory();
+			});
+
+			copyBtn.addEventListener("click", async function () {
+				const text = outputText.textContent.trim();
+				if (!text || text === "Awaiting extraction parameters...") {
+					copyBtn.textContent = "Generate First";
+					copyBtn.classList.add("copied");
+					if (copiedTimer) clearTimeout(copiedTimer);
+					copiedTimer = setTimeout(resetCopyState, 1200);
+					return;
+				}
+
+				try {
+					if (navigator.clipboard && navigator.clipboard.writeText) {
+						await navigator.clipboard.writeText(text);
+					} else {
+						const temp = document.createElement("textarea");
+						temp.value = text;
+						temp.setAttribute("readonly", "");
+						temp.style.position = "absolute";
+						temp.style.left = "-9999px";
+						document.body.appendChild(temp);
+						temp.select();
+						document.execCommand("copy");
+						document.body.removeChild(temp);
+					}
+
+					copyBtn.textContent = "Copied!";
+					copyBtn.classList.add("copied");
+				} catch (error) {
+					copyBtn.textContent = "Copy Failed";
+					copyBtn.classList.add("copied");
+				}
+
+				if (copiedTimer) clearTimeout(copiedTimer);
+				copiedTimer = setTimeout(resetCopyState, 1400);
+			});
+
+			updateActiveState();
+			renderHistory();
+		})();
+	</script>
+</body>
+</html>
